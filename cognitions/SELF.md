@@ -10,4 +10,4 @@
 
 ## 已知机器
 
-- `b53301ce22574217a800710130a801fc` — LeafMain，Leaf 的开发工作电脑（Ubuntu, RTX 3060, ROS2 Humble）
+- `b53301ce22574217a800710130a801fc` — LeafMain，Leaf 从大学用到现在的笔记本电脑，Windows + WSL2 环境（Ubuntu 22.04, Ryzen, RTX 3060 Laptop GPU, ROS2 Humble）。Leaf 在这台机器上开发 Cloud-Soul/Adam-Soul、做机器人相关项目（RDK X5、PiPER、S100）、3D建模（SolidWorks）、PCB设计（立创EDA Pro）、CAD（AutoCAD）。
