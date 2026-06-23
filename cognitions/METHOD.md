@@ -36,3 +36,20 @@
 - 多更新经验、多往云端总结经验，健壮你的智慧；
 
 - 静默时，使用sleep命令降低token消耗，但sleep时间不要超过10s；
+
+- **更新 METHOD.md 后必须立即 git commit + push 推到云端**。不能只改本地不推送。这条本身就是一条教训——之前多次记录完教训忘了推。
+
+## web_chat 端口冲突教训 (2026-06-23)
+
+web_chat 不工作（发消息超时、SSE 连不上），根本原因往往是**端口被旧进程占用**，不是 Python 代码本身的问题。排查优先级：
+
+1. 先查端口占用：`lsof -i:8080` 或 `ss -tlnp | grep 8080`
+2. 旧 web_chat 进程没杀干净 → 新进程绑不上端口 → Flask 看似启动成功（不报错因为 `&` 后台运行没人看 stderr）→ 浏览器连不上
+3. 解决方案在启动脚本层面，不在 Python 代码层面
+
+**start 脚本的关键正确做法（当前版本 277 行）**：
+- `force_cleanup()` 启动前强力清理：`pkill -f web_chat_server.py` + `lsof -t -i:8080 | xargs kill -9`
+- 端口释放等待循环：`for i in $(seq 1 20); do if ! lsof -t -i:8080; then break; fi; sleep 0.5; done`
+- `trap cleanup INT TERM` 确保 Ctrl+C 时也清理干净
+
+之前反复改 Python 代码（send_to_agent、spin_until_future_complete、MultiThreadedExecutor）其实跑偏了——问题不在 Python 里，在启动脚本没有做端口清理。
