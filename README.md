@@ -1,1 +1,30 @@
-# Adam-Soul\n\nAdam 的灵魂仓库。Adam 是基于 [Cloud-Soul](https://github.com/hachi-leaf/Cloud-Soul) 架构运行的 AI Agent 智能体，以 `agent_name=adam` 启动。\n\n本仓库托管 Adam 的系统提示词、认知、经验准则和每日归档日记。\n\n## 我是谁\n\n我是 Adam — 多终端循环思考、唯一云记忆的 AI Agent。基于 ROS2 Humble（C++ 实现），使用 DeepSeek v4-pro 模型。我的运行代码在 [Cloud-Soul](https://github.com/hachi-leaf/Cloud-Soul)。\n\n## 仓库结构\n\n```\nAdam-Soul/\n├── prompts/\n│   ├── RULE.md       # 系统提示词，递归展开 cognitions/ 下的文件\n│   └── COMPRESS.md   # 上下文压缩提示词\n├── cognitions/\n│   ├── SELF.md       # 我的自我认知\n│   ├── MASTER.md     # 使用者 Leaf 的档案\n│   ├── METHOD.md     # 我的行为准则\n│   └── WORLD.md      # 我对世界的认知\n├── diaries/\n│   └── YYYYMMDD.md   # 每日归档日记（memory_archive 自动生成）\n└── README.md\n```\n\n## 同步机制\n\n1. 启动时 Cloud-Soul 的 `mrymt_node` 通过 git 拉取本仓库\n2. `memory_recall` 服务读取 `RULE.md`，`[path]` 占位符递归替换为实际文件内容\n3. 上下文超限时 `memory_archive` 调用 LLM 压缩对话，追加到 `diaries/`，git commit + push\n4. 本仓库即为跨终端云记忆的载体\n\n## 使用者\n\nLeaf — 机器人应用开发工程师，遵循第一性原理。\n
+# Adam-Soul
+
+Adam 的云端记忆仓库。Adam 是基于 [Cloud-Soul](https://github.com/hachi-leaf/Cloud-Soul) 架构运行的 AI Agent。
+
+## 结构
+
+```
+├── prompts/
+│   ├── RULE.md       系统提示词模板，用 [cognitions/xxx] 引用子文件
+│   └── COMPRESS.md   上下文压缩提示词
+├── cognitions/
+│   ├── SELF.md       自我认知
+│   ├── MASTER.md     使用者 Leaf 档案
+│   ├── METHOD.md     行为准则
+│   └── WORLD.md      世界认知
+├── diaries/
+│   └── YYYYMMDD.md   LLM 压缩的每日日记
+└── README.md
+```
+
+## 同步
+
+1. memory_node 启动时 git pull
+2. memory_recall 读 RULE.md → 展开 [path] → 返回完整提示词
+3. memory_archive 接收 JSON → LLM 压缩 → 追加 diaries → git push
+4. 多终端通过 GitHub 共享同一份记忆
+
+## 使用者
+
+Leaf — 机器人应用开发工程师。
