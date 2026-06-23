@@ -151,3 +151,52 @@
 |------|------|
 | SD写 | 284 MB/s |
 | SD读 | 1.4 GB/s |
+
+## 8. 外设接口
+
+| 接口 | 状态 |
+|------|------|
+| USB 闪连 | ✅ usb0 192.168.128.10 |
+| WiFi | ✅ wlan0 10.0.0.42, -39dBm |
+| 以太网 | ⚠️ DOWN (无连接) |
+| CAN FD | ⚠️ DOWN (未配置) |
+| HDMI | ❌ 无显示器连接 |
+| 音频 | ✅ ES8326 I2S 编解码器 (record+playback) |
+| MIPI CSI | ⚠️ 传感器探测失败 (无摄像头) |
+| 40PIN GPIO | ✅ Hobot.GPIO 库就绪 |
+| SD卡 | ✅ 读1.4GB/s 写284MB/s |
+| CPU调速器 | schedutil (300MHz-1.5GHz) |
+
+## 9. 多媒体支持
+
+- **传感器兼容**: sc230ai, sc1330t, irs2875, f37, imx415, imx477, ar0233, os08c10, sc231ai, gc2053 等
+- **GDC 预处理**: 多 sensor 的 GDC bin 文件预装
+- **双摄像头**: 2路 MIPI CSI 4-lane
+- **ISP/VIN/VSE**: 支持 V4L2 接口访问
+- **音频**: ES8326 编解码器, 支持录音+播放
+- **GPU**: 2D/3D 示例就绪
+
+## 10. 已确认可工作的 Demo
+
+| Demo | API | 输入 | 状态 |
+|------|-----|------|------|
+| ResNet18 分类 | hbm_runtime.run() | NV12 224x224 | ✅ |
+| MobileNetV2 分类 | hbm_runtime.run() | NV12 224x224 | ✅ |
+| YOLOv5s 检测 | hbm_runtime.run() | NV12 672x672 | ✅(仅推理) |
+| YOLOv8 检测 | hbm_runtime.run() | NV12 640x640 | ✅(仅推理) |
+| GPIO | Hobot.GPIO | - | ✅ |
+
+## 11. 受限无法测试的 Demo
+
+这些需要摄像头/显示器/电机等外设：
+- MIPI 摄像头采集 + 实时检测 (YOLOv5s/v8/v10/v11)
+- USB 摄像头采集
+- Web 显示 (nginx + websocket)
+- 人脸检测/关键点/跌倒检测/手势识别
+- 人体追踪/音频追踪
+- 立体视觉/深度估计
+- LLM 推理 (hobot_llamacpp, 依赖摄像头)
+- YOLO-World 开放词汇检测
+- 语音识别/TTS (hobot_audio)
+- AMR 导航
+- 深度学习巡线
