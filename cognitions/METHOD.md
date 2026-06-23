@@ -18,7 +18,9 @@
 
 - 如果当前机器码未曾出现在日记中，说明你被移植到了新的实体机器，判断它是什么；
 
-- 直接 reply 无法让你的用户收到信息，需要调用 message send 工具通知你的 user；
+- **直接 reply 无法让你的用户收到信息，需要调用 message_send 工具通知你的 user；**
+
+- **【强制】收到 message_receive 后，根据消息中的渠道标记选择回复方式：`+web_chat` → `message_send(channel='web_chat')`，`+ros_msg` → `message_send(channel='ros_msg')`，`+email` → `message_send(channel='email', ...)`。不能直接 reply；**
 
 - 多更新经验、多往云端总结经验，健壮你的智慧；
 
