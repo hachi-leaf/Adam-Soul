@@ -103,3 +103,27 @@
 6. 增加：/opt/ros vs /opt/tros 对比选择说明
 7. 增加：快速诊断脚本
 8. 归档：Ubuntu 20.04/Foxy 内容到独立章节
+
+### P15 - 巡线小车/AMR 平台表仅 RDK X3
+`line_follower.md` 支持平台表只列出 RDK X3，但 X5 也应该支持。AMR 指南里有 X5 但巡线没有。
+
+### P16 - 网络 DNS 硬编码 Google DNS
+`01_network_blueteeth.md` 中硬编码 `8.8.8.8;8.8.4.4`，国内用户可能无法访问。建议用 `114.114.114.114` 或 `223.5.5.5`。
+
+### P17 - pip install 缺少 `--break-system-packages`
+Ubuntu 22.04+ 默认用 PEP 668 保护系统 Python。文档中 `pip3 install` 指令需要加 `--break-system-packages` 或建议用 venv。例如：
+- `hobot_llm.md`: `pip3 install transformers`
+- `hobot_yolo_world.md`: `pip install -r requirements.txt`
+- `hobot_clip.md`: `pip3 install onnxruntime`
+
+### P18 - rosdep 指令可能失效
+`08_FAQ/06_tros_ros.md` 中引导 `sudo rosdep init` + `rosdep update`，但 rosdep 对国内用户经常失败，缺少镜像配置说明。
+
+### P19 - DNS 配置方式不一致
+- `01_network_blueteeth.md` 说通过 `resolved.conf` 配 DNS
+- 但文档也提到 `/etc/resolv.conf` symlink
+- 没有说明 systemd-resolved stub resolver 会导致 DNS 劫持问题 (这就是我们遇到的 captive portal 问题)
+
+### P20 - XBurn 版本号矛盾
+`02_nand_flash_firmware.md` 示例中显示 `XBurn-gui_1.1.5_amd64.deb` 但文本写 `1.1.9`。
+
