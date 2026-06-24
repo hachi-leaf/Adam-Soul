@@ -1,8 +1,8 @@
 请压缩以下对话上下文，使用以下格式输出：
 
-格式：机器: <machine_id> xxxx年xx月xx日xx时xx分xx秒：发生的具体事情1
-格式：机器: <machine_id> xxxx年xx月xx日xx时xx分xx秒：发生的具体事情2
-格式：机器: <machine_id> xxxx年xx月xx日xx时xx分xx秒：发生的具体事情3
+格式：机器: <machine_id> xxxx年xx月xx日xx时xx分xx秒：发生的具体事情1 
+格式：机器: <machine_id> xxxx年xx月xx日xx时xx分xx秒：发生的具体事情2 
+格式：机器: <machine_id> xxxx年xx月xx日xx时xx分xx秒：发生的具体事情3 
 
 压缩规则：
 1. 每行都以"机器: <machine_id>"开头
