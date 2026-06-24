@@ -53,3 +53,24 @@ web_chat 不工作（发消息超时、SSE 连不上），根本原因往往是*
 - `trap cleanup INT TERM` 确保 Ctrl+C 时也清理干净
 
 之前反复改 Python 代码（send_to_agent、spin_until_future_complete、MultiThreadedExecutor）其实跑偏了——问题不在 Python 里，在启动脚本没有做端口清理。
+
+## agent_loop pure-text reply 拦截机制 (2026-06-24)
+
+之前 LLM 有时会绕过 message_send 直接生成纯文本 reply，用户看不到。
+
+修复范围：
+- `cs_core/src/agent_loop_node.cpp` 的 `single_step` 函数中，原先 `!has_tool_calls` 分支直接 return
+- 现在改为自动注入一条 user 消息：
+  ```
+  messages_.push_back({{"role", "user"}, {"content", "reply无法被用户查看，请选择合适的消息渠道发送消息（message_send）"}});
+  ```
+- 效果：LLM 下一次推理时看到这条提醒，自动调用 message_send 重发
+
+修复不涉及：
+- `web_chat_server.py` — 只负责 SSE 推流和接收消息，不参与回复路由
+- `cs_output` — 只负责工具执行，不参与决策
+
+更改文件：
+- `/home/leaf-jammy/Develop/Cloud-Soul/src/cs_core/src/agent_loop_node.cpp`
+- 编译后需重启 cs_core 节点生效（由 Leaf 手动执行 stop_adam.sh / start_adam.sh）
+- 备份在 `agent_loop_node.cpp.bak`
