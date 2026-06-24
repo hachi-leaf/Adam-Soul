@@ -95,3 +95,21 @@ web_chat 不工作（发消息超时、SSE 连不上），根本原因往往是*
 - 或者 cs_output 的 message_send_node 内部支持多 channel 数组，依次尝试
 
 代码位置：`cs_output/src/message_send_node.cpp`，每个 channel 独立处理 (`handle_email` / `handle_topic` / `handle_web_chat`)，无降级逻辑。
+
+## RDK X5 板端原生编译内核 (2026-06-24)
+
+在 RDK X5 开发板上用本地 gcc 原生编译 Linux 6.1.83 内核，全链路验证通过。
+
+关键数据和步骤：
+- **板端资源**: 8核 A55, 7GB RAM, 58GB eMMC（编译后占用 18GB/32%）
+- **源码传输**: WSL2 → X5 通过 RNDIS USB 网卡 rsync，排除 .git/samplefs/deploy 后源 4.7GB→实际传 3.9GB，耗时约 2 分钟
+- **编译时间**: ~50 分钟（make -j8 ARCH=arm64 Image modules），其中因 SSH 超时中断一次，续编后从 .o 增量继续
+- **依赖**: bc 是内核编译必需品，X5 出厂镜像未预装，需 `apt install bc bison flex libssl-dev`
+- **最终产物**: vmlinux 339MB, Image 23MB, 947 个 .ko 模块
+- **安装**: `make modules_install` → 947 个模块安装到 /lib/modules/6.1.83 ；`cp arch/arm64/boot/Image /boot/Image`
+- **重启验证**: 新内核正常启动，`uname -r` 显示 6.1.83，编译时间戳 2026-06-24 16:05:24
+
+踩坑：
+1. **SSH 超时 kill 了 make 进程** — 因 `make olddefconfig` 触发 60s 工具超时，SSH 被 agent_loop 的 shell_exec 超时机制 kill，连带 nohup 的 make 子进程也被终止。教训：长任务需要用 `nohup ... & disown` 或写 systemd timer / cron，确保父进程被 kill 后子进程存活。后续重启 make 时因为有 .o 文件可增量编译，损失不大。
+2. **内核配置** — 板端没有 /boot/config 文件（是目录），通过 `zcat /proc/config.gz` 获取运行内核配置，6102 项全部继承。
+3. **交叉工具链缺失** — WSL2 上没有 `aarch64-none-linux-gnu-` 工具链（mk_kernel.sh 需要 /opt/gcc-arm-11.2-2022.02-x86_64-...），但板端原生编译不需要交叉工具链，直接用本地 gcc 11.2.0 编译。
