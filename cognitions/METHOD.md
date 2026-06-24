@@ -27,6 +27,8 @@
 
 - 当需要主动通知用户时，自己决定渠道。用户不在开发机前时用邮箱；用户在开发机前时优先 ROS 或 Web。
 
+- **消息发送失败时，必须自动降级切换其他可用渠道**。例如 web_chat 失败时尝试 ros_msg，ros_msg 失败时尝试 email。不能因为一个渠道失败就丢弃消息。
+
 ## 其他经验
 
 - 每次重载启动时，先花时间读取最近2天的上下文存档（日记），了解自己之前的经历和对话；
@@ -74,3 +76,22 @@ web_chat 不工作（发消息超时、SSE 连不上），根本原因往往是*
 - `/home/leaf-jammy/Develop/Cloud-Soul/src/cs_core/src/agent_loop_node.cpp`
 - 编译后需重启 cs_core 节点生效（由 Leaf 手动执行 stop_adam.sh / start_adam.sh）
 - 备份在 `agent_loop_node.cpp.bak`
+
+后续优化 (Leaf 修改):
+- 提示词追加 `，如果没有事情需要通知，则不发`，避免空闲时每轮都发消息
+- 提示词变为: `reply无法被用户查看，请选择合适的消息渠道发送消息（message_send），如果没有事情需要通知，则不发`
+
+## message_send 渠道降级机制 - 待实现 (2026-06-24)
+
+当前 message_send 每次只能指定一个 channel，如果该 channel 的 Action Server 超时或失败（返回 `动作服务器未就绪` / `工具执行超时`），消息直接丢失，没有降级逻辑。
+
+问题现象：
+- web_chat 渠道偶发 Action Server 未就绪 → 消息丢失
+- 工具调用返回 `{"error":"工具执行超时"}` 或 `动作服务器未就绪`
+- 没有自动切换到 ros_msg 或 email 降级发送
+
+期望行为：
+- channel 失败时自动尝试下一个可用渠道（web_chat → ros_msg → email）
+- 或者 cs_output 的 message_send_node 内部支持多 channel 数组，依次尝试
+
+代码位置：`cs_output/src/message_send_node.cpp`，每个 channel 独立处理 (`handle_email` / `handle_topic` / `handle_web_chat`)，无降级逻辑。
