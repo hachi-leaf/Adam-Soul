@@ -113,3 +113,22 @@ web_chat 不工作（发消息超时、SSE 连不上），根本原因往往是*
 1. **SSH 超时 kill 了 make 进程** — 因 `make olddefconfig` 触发 60s 工具超时，SSH 被 agent_loop 的 shell_exec 超时机制 kill，连带 nohup 的 make 子进程也被终止。教训：长任务需要用 `nohup ... & disown` 或写 systemd timer / cron，确保父进程被 kill 后子进程存活。后续重启 make 时因为有 .o 文件可增量编译，损失不大。
 2. **内核配置** — 板端没有 /boot/config 文件（是目录），通过 `zcat /proc/config.gz` 获取运行内核配置，6102 项全部继承。
 3. **交叉工具链缺失** — WSL2 上没有 `aarch64-none-linux-gnu-` 工具链（mk_kernel.sh 需要 /opt/gcc-arm-11.2-2022.02-x86_64-...），但板端原生编译不需要交叉工具链，直接用本地 gcc 11.2.0 编译。
+
+## nlohmann::json dump UTF-8 校验导致上下文压缩崩溃 (2026-06-25)
+
+上下文压缩后，`save_context()` 和 LLM API 调用 (`body.dump()`) 抛出 `[json.exception.type_error.316] invalid UTF-8 byte at index 2000: 0x0A`，导致 agent_loop 进入死循环重试。
+
+根因：nlohmann/json 3.10.5 的 `dump()` 默认校验字符串是否为合法 UTF-8。某条消息的 content 中包含不完整的多字节 UTF-8 序列（如 `E7 88 0A` — 两字节后遇到 0x0A 而非合法的 continuation byte 0x80-0xBF），触发校验失败。0x0A 本身合法，但在多字节序列中间出现就非法。
+
+修复（commit 5dfd77c，develop 分支）：
+- `agent_loop_node.cpp` 新增 `sanitize_utf8()` — 逐字节扫描，无效序列替换为 U+FFFD
+- 新增 `sanitize_json_utf8()` — 递归清理 JSON 对象中所有 string 值
+- `save_context()` catch 块：dump 失败后自动调用 sanitize + 重试
+- `refresh_client()`：发送 LLM 前对每条消息做 UTF-8 清理
+
+覆盖两条关键路径：上下文文件保存 + LLM API 请求构造。编译后需重启 Adam 生效。
+
+教训：
+- nlohmann::json 的 dump() 不是纯序列化，它会做 UTF-8 校验
+- 任何可能包含外部数据（LLM 输出、文件读取、shell 输出）的字符串，在存入 nlohmann::json 前应考虑 sanitize
+- 防御性编程：关键路径的 dump() 调用应包裹 try-catch + sanitize + retry
